@@ -1,123 +1,78 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
-    <style>
-      body {
-        font-family: Arial, sans-serif;
-        margin: 20px;
-      }
-      select, canvas {
-        margin: 20px 0;
-      }
-    </style>
-  </head>
-  <body>
-    <h1>Dashboard de Comparação de Dados</h1>
-    
-    <label for="coluna1">Escolha a 1ª coluna:</label>
-    <select id="coluna1"></select>
-
-    <label for="coluna2">Escolha a 2ª coluna:</label>
-    <select id="coluna2"></select>
-
-    <label for="coluna3">Escolha a 3ª coluna:</label>
-    <select id="coluna3"></select>
-
-    <button onclick="gerarGrafico()">Gerar Gráfico</button>
-
-    <canvas id="grafico" width="400" height="200"></canvas>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Comparação</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <h1>Dashboard de Comparação</h1>
+    <canvas id="comparisonChart" width="800" height="400"></canvas>
 
     <script>
-      // Função para carregar os dados do Google Sheets usando o Apps Script
-      function carregarDados() {
-        google.script.run.withSuccessHandler(function(response) {
-          var headers = response.headers;  // Cabeçalhos das colunas
-          var data = response.data;  // Dados das linhas
+        // Substitua YOUR_API_KEY pela sua chave de API real do Google
+        const API_KEY = 'YOUR_API_KEY';
+        const SHEET_ID = '1F-BudKkExs65hQuWLNQN3UPrl_J0xP0Uf4fF0piijL4';
+        const RANGE = 'B:D'; // Estamos pegando as colunas B, C e D
 
-          // Preencher as listas suspensas com as colunas disponíveis
-          var coluna1Select = document.getElementById("coluna1");
-          var coluna2Select = document.getElementById("coluna2");
-          var coluna3Select = document.getElementById("coluna3");
+        // Função para buscar os dados da planilha
+        async function fetchSheetData() {
+            const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${RANGE}?key=${API_KEY}`);
+            const data = await response.json();
+            return data.values;
+        }
 
-          // Adicionar as colunas nas listas suspensas
-          headers.forEach(function(header, index) {
-            var option1 = document.createElement("option");
-            var option2 = document.createElement("option");
-            var option3 = document.createElement("option");
-
-            option1.value = index;
-            option1.textContent = header;
-            option2.value = index;
-            option2.textContent = header;
-            option3.value = index;
-            option3.textContent = header;
-
-            coluna1Select.appendChild(option1);
-            coluna2Select.appendChild(option2);
-            coluna3Select.appendChild(option3);
-          });
-        }).getData();
-      }
-
-      // Função para gerar o gráfico
-      function gerarGrafico() {
-        var coluna1 = document.getElementById("coluna1").value;
-        var coluna2 = document.getElementById("coluna2").value;
-        var coluna3 = document.getElementById("coluna3").value;
-
-        google.script.run.withSuccessHandler(function(response) {
-          var data = response.data;
-
-          var labels = data.map(row => row[0]); // Supondo que a primeira coluna seja a Data
-          var dataSet1 = data.map(row => row[coluna1]);
-          var dataSet2 = data.map(row => row[coluna2]);
-          var dataSet3 = data.map(row => row[coluna3]);
-
-          var ctx = document.getElementById('grafico').getContext('2d');
-          var chart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-              labels: labels,
-              datasets: [
-                {
-                  label: response.headers[coluna1],
-                  data: dataSet1,
-                  borderColor: 'rgba(255, 99, 132, 1)',
-                  backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                  borderWidth: 1
+        // Função para criar o gráfico
+        function createChart(labels, dataB, dataD) {
+            const ctx = document.getElementById('comparisonChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Coluna B',
+                        data: dataB,
+                        backgroundColor: 'rgba(75, 192, 192, 0.6)'
+                    }, {
+                        label: 'Coluna D',
+                        data: dataD,
+                        backgroundColor: 'rgba(255, 99, 132, 0.6)'
+                    }]
                 },
-                {
-                  label: response.headers[coluna2],
-                  data: dataSet2,
-                  borderColor: 'rgba(54, 162, 235, 1)',
-                  backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                  borderWidth: 1
-                },
-                {
-                  label: response.headers[coluna3],
-                  data: dataSet3,
-                  borderColor: 'rgba(75, 192, 192, 1)',
-                  backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                  borderWidth: 1
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Comparação entre Colunas B e D'
+                        }
+                    }
                 }
-              ]
-            },
-            options: {
-              responsive: true,
-              scales: {
-                y: {
-                  beginAtZero: true
-                }
-              }
+            });
+        }
+
+        // Função principal
+        async function main() {
+            try {
+                const sheetData = await fetchSheetData();
+                const labels = sheetData.map(row => row[0]); // Assumindo que a coluna A tem os rótulos
+                const dataB = sheetData.map(row => parseFloat(row[1]) || 0);
+                const dataD = sheetData.map(row => parseFloat(row[3]) || 0);
+                createChart(labels, dataB, dataD);
+            } catch (error) {
+                console.error('Erro ao buscar ou processar os dados:', error);
+                document.body.innerHTML += '<p>Erro ao carregar o dashboard. Por favor, verifique o console para mais detalhes.</p>';
             }
-          });
+        }
 
-        }).getData();
-      }
-
-      // Carregar os dados ao iniciar a página
-      window.onload = carregarDados;
+        // Executar a função principal quando a página carregar
+        window.onload = main;
     </script>
-  </body>
+</body>
 </html>
