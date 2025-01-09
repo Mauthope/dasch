@@ -3,76 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard de Comparação</title>
+    <title>Dashboard de Produção de Leite</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <h1>Dashboard de Comparação</h1>
-    <canvas id="comparisonChart" width="800" height="400"></canvas>
+    <h1>Dashboard de Produção de Leite</h1>
+
+    <label for="nameFilter">Selecione o nome:</label>
+    <select id="nameFilter" onchange="fetchData()">
+        <option value="">Selecione um nome</option>
+        <!-- As opções serão preenchidas dinamicamente -->
+    </select>
+
+    <canvas id="milkProductionChart" width="400" height="200"></canvas>
 
     <script>
-        // Substitua YOUR_API_KEY pela sua chave de API real do Google
-        const API_KEY = 'YOUR_API_KEY';
-        const SHEET_ID = '1F-BudKkExs65hQuWLNQN3UPrl_J0xP0Uf4fF0piijL4';
-        const RANGE = 'B:D'; // Estamos pegando as colunas B, C e D
+        const url = 'https://script.google.com/macros/s/AKfycbz0JDnafzI3GHggonh1FP-DmostmOxWzw7a73kVopt05GI7Tk3o77ucPPCYqmftRw/exec';
 
-        // Função para buscar os dados da planilha
-        async function fetchSheetData() {
-            const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${RANGE}?key=${API_KEY}`);
+        // Função para obter a lista de nomes
+        async function getNames() {
+            const response = await fetch(url);
             const data = await response.json();
-            return data.values;
+            const names = new Set(data.map(item => item.nome)); // Remove duplicatas
+            const select = document.getElementById('nameFilter');
+            names.forEach(name => {
+                const option = document.createElement('option');
+                option.value = name;
+                option.textContent = name;
+                select.appendChild(option);
+            });
         }
 
-        // Função para criar o gráfico
-        function createChart(labels, dataB, dataD) {
-            const ctx = document.getElementById('comparisonChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'bar',
+        // Função para buscar os dados filtrados
+        async function fetchData() {
+            const name = document.getElementById('nameFilter').value;
+            if (!name) return; // Se não for selecionado um nome, não faz nada
+
+            const response = await fetch(`${url}?name=${name}`);
+            const data = await response.json();
+
+            const labels = data.map(item => item.data);
+            const production = data.map(item => item.producao_leite);
+
+            // Atualiza o gráfico
+            updateChart(labels, production);
+        }
+
+        // Função para atualizar o gráfico
+        function updateChart(labels, production) {
+            const ctx = document.getElementById('milkProductionChart').getContext('2d');
+            const chart = new Chart(ctx, {
+                type: 'line',
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: 'Coluna B',
-                        data: dataB,
-                        backgroundColor: 'rgba(75, 192, 192, 0.6)'
-                    }, {
-                        label: 'Coluna D',
-                        data: dataD,
-                        backgroundColor: 'rgba(255, 99, 132, 0.6)'
+                        label: 'Produção de Leite',
+                        data: production,
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        fill: false
                     }]
                 },
                 options: {
                     responsive: true,
                     scales: {
+                        x: {
+                            type: 'category',
+                            title: {
+                                display: true,
+                                text: 'Data'
+                            }
+                        },
                         y: {
-                            beginAtZero: true
-                        }
-                    },
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Comparação entre Colunas B e D'
+                            title: {
+                                display: true,
+                                text: 'Produção (litros)'
+                            }
                         }
                     }
                 }
             });
         }
 
-        // Função principal
-        async function main() {
-            try {
-                const sheetData = await fetchSheetData();
-                const labels = sheetData.map(row => row[0]); // Assumindo que a coluna A tem os rótulos
-                const dataB = sheetData.map(row => parseFloat(row[1]) || 0);
-                const dataD = sheetData.map(row => parseFloat(row[3]) || 0);
-                createChart(labels, dataB, dataD);
-            } catch (error) {
-                console.error('Erro ao buscar ou processar os dados:', error);
-                document.body.innerHTML += '<p>Erro ao carregar o dashboard. Por favor, verifique o console para mais detalhes.</p>';
-            }
-        }
-
-        // Executar a função principal quando a página carregar
-        window.onload = main;
+        // Inicializa a aplicação
+        window.onload = function() {
+            getNames();
+        };
     </script>
 </body>
 </html>
