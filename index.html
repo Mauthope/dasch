@@ -22,16 +22,25 @@
 
         // Função para obter a lista de nomes
         async function getNames() {
-            const response = await fetch(url);
-            const data = await response.json();
-            const names = new Set(data.map(item => item.nome)); // Remove duplicatas
-            const select = document.getElementById('nameFilter');
-            names.forEach(name => {
-                const option = document.createElement('option');
-                option.value = name;
-                option.textContent = name;
-                select.appendChild(option);
-            });
+            try {
+                const response = await fetch(url);
+                const names = await response.json();
+
+                console.log("Nomes recebidos:", names); // Log para depuração
+                if (Array.isArray(names) && names.length > 0) {
+                    const select = document.getElementById('nameFilter');
+                    names.forEach(name => {
+                        const option = document.createElement('option');
+                        option.value = name;
+                        option.textContent = name;
+                        select.appendChild(option);
+                    });
+                } else {
+                    console.error("Nenhum nome encontrado.");
+                }
+            } catch (error) {
+                console.error("Erro ao carregar os nomes:", error);
+            }
         }
 
         // Função para buscar os dados filtrados
@@ -39,14 +48,20 @@
             const name = document.getElementById('nameFilter').value;
             if (!name) return; // Se não for selecionado um nome, não faz nada
 
-            const response = await fetch(`${url}?name=${name}`);
-            const data = await response.json();
+            try {
+                const response = await fetch(`${url}?name=${name}`);
+                const data = await response.json();
 
-            const labels = data.map(item => item.data);
-            const production = data.map(item => item.producao_leite);
+                console.log("Dados recebidos:", data); // Log para depuração
 
-            // Atualiza o gráfico
-            updateChart(labels, production);
+                const labels = data.map(item => item.data);
+                const production = data.map(item => item.producao_leite);
+
+                // Atualiza o gráfico
+                updateChart(labels, production);
+            } catch (error) {
+                console.error("Erro ao carregar os dados filtrados:", error);
+            }
         }
 
         // Função para atualizar o gráfico
