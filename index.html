@@ -29,99 +29,91 @@
     <canvas id="grafico" width="400" height="200"></canvas>
 
     <script>
-      // URL do aplicativo do Google Apps Script
-      const appUrl = 'https://script.google.com/macros/s/AKfycbz0JDnafzI3GHggonh1FP-DmostmOxWzw7a73kVopt05GI7Tk3o77ucPPCYqmftRw/exec';
-
-      // ID da planilha do Google Sheets
-      const sheetId = '19GZq-sgd3DETvc37nAkyDt328Py1BsX8iePgrvN3C9o';
-      
-      // Função para carregar os dados do Google Sheets
+      // Função para carregar os dados do Google Sheets usando o Apps Script
       function carregarDados() {
-        fetch(appUrl + '?action=getData&sheetId=' + sheetId)
-          .then(response => response.json())
-          .then(data => {
-            const headers = data.headers;
-            const dataRows = data.data;
+        google.script.run.withSuccessHandler(function(response) {
+          var headers = response.headers;  // Cabeçalhos das colunas
+          var data = response.data;  // Dados das linhas
 
-            const coluna1Select = document.getElementById("coluna1");
-            const coluna2Select = document.getElementById("coluna2");
-            const coluna3Select = document.getElementById("coluna3");
+          // Preencher as listas suspensas com as colunas disponíveis
+          var coluna1Select = document.getElementById("coluna1");
+          var coluna2Select = document.getElementById("coluna2");
+          var coluna3Select = document.getElementById("coluna3");
 
-            headers.forEach((header, index) => {
-              const option1 = document.createElement("option");
-              const option2 = document.createElement("option");
-              const option3 = document.createElement("option");
+          // Adicionar as colunas nas listas suspensas
+          headers.forEach(function(header, index) {
+            var option1 = document.createElement("option");
+            var option2 = document.createElement("option");
+            var option3 = document.createElement("option");
 
-              option1.value = index;
-              option1.textContent = header;
-              option2.value = index;
-              option2.textContent = header;
-              option3.value = index;
-              option3.textContent = header;
+            option1.value = index;
+            option1.textContent = header;
+            option2.value = index;
+            option2.textContent = header;
+            option3.value = index;
+            option3.textContent = header;
 
-              coluna1Select.appendChild(option1);
-              coluna2Select.appendChild(option2);
-              coluna3Select.appendChild(option3);
-            });
-
-          }).catch(error => console.error('Error:', error));
+            coluna1Select.appendChild(option1);
+            coluna2Select.appendChild(option2);
+            coluna3Select.appendChild(option3);
+          });
+        }).getData();
       }
 
       // Função para gerar o gráfico
       function gerarGrafico() {
-        const coluna1 = document.getElementById("coluna1").value;
-        const coluna2 = document.getElementById("coluna2").value;
-        const coluna3 = document.getElementById("coluna3").value;
+        var coluna1 = document.getElementById("coluna1").value;
+        var coluna2 = document.getElementById("coluna2").value;
+        var coluna3 = document.getElementById("coluna3").value;
 
-        fetch(appUrl + '?action=getData&sheetId=' + sheetId)
-          .then(response => response.json())
-          .then(data => {
-            const dataRows = data.data;
-            const labels = dataRows.map(row => row[0]); // Assumindo que a primeira coluna seja a Data
-            const dataSet1 = dataRows.map(row => row[coluna1]);
-            const dataSet2 = dataRows.map(row => row[coluna2]);
-            const dataSet3 = dataRows.map(row => row[coluna3]);
+        google.script.run.withSuccessHandler(function(response) {
+          var data = response.data;
 
-            const ctx = document.getElementById('grafico').getContext('2d');
-            const chart = new Chart(ctx, {
-              type: 'bar',
-              data: {
-                labels: labels,
-                datasets: [
-                  {
-                    label: data.headers[coluna1],
-                    data: dataSet1,
-                    borderColor: 'rgba(255, 99, 132, 1)',
-                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                    borderWidth: 1
-                  },
-                  {
-                    label: data.headers[coluna2],
-                    data: dataSet2,
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                    borderWidth: 1
-                  },
-                  {
-                    label: data.headers[coluna3],
-                    data: dataSet3,
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    borderWidth: 1
-                  }
-                ]
-              },
-              options: {
-                responsive: true,
-                scales: {
-                  y: {
-                    beginAtZero: true
-                  }
+          var labels = data.map(row => row[0]); // Supondo que a primeira coluna seja a Data
+          var dataSet1 = data.map(row => row[coluna1]);
+          var dataSet2 = data.map(row => row[coluna2]);
+          var dataSet3 = data.map(row => row[coluna3]);
+
+          var ctx = document.getElementById('grafico').getContext('2d');
+          var chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: labels,
+              datasets: [
+                {
+                  label: response.headers[coluna1],
+                  data: dataSet1,
+                  borderColor: 'rgba(255, 99, 132, 1)',
+                  backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                  borderWidth: 1
+                },
+                {
+                  label: response.headers[coluna2],
+                  data: dataSet2,
+                  borderColor: 'rgba(54, 162, 235, 1)',
+                  backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                  borderWidth: 1
+                },
+                {
+                  label: response.headers[coluna3],
+                  data: dataSet3,
+                  borderColor: 'rgba(75, 192, 192, 1)',
+                  backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                  borderWidth: 1
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              scales: {
+                y: {
+                  beginAtZero: true
                 }
               }
-            });
+            }
+          });
 
-          }).catch(error => console.error('Error:', error));
+        }).getData();
       }
 
       // Carregar os dados ao iniciar a página
