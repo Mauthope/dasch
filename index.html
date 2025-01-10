@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Comparativo</title>
+    <title>Dashboard de Produção</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
@@ -12,17 +12,18 @@
             background-color: #f5f5f5;
         }
         .container {
-            max-width: 900px;
+            max-width: 1200px;
             margin: 0 auto;
             background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
         h1 {
-            color: #333;
+            color: #2c3e50;
             text-align: center;
             margin-bottom: 30px;
+            font-size: 24px;
         }
         .loading {
             text-align: center;
@@ -30,25 +31,29 @@
             font-size: 18px;
             color: #666;
         }
+        .chart-container {
+            padding: 20px;
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Dashboard Comparativo</h1>
+        <h1>Quantidade por Produtor</h1>
         <div id="loading" class="loading">Carregando dados...</div>
-        <canvas id="myChart"></canvas>
+        <div class="chart-container">
+            <canvas id="myChart"></canvas>
+        </div>
     </div>
 
     <script>
-        // URL do seu Apps Script publicado
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyfshcEZZkQv3qMQtD9EMH6kUSQM3EfsCYFV3w5O9POMgK3Ww8KJohAqgK2B_zzrT0/exec';
 
-        // Função para buscar os dados
         async function fetchData() {
             try {
                 const response = await fetch(SCRIPT_URL);
                 const data = await response.json();
-                return data;
+                return data.filter(row => row[0] && row[2]); // Filtra apenas linhas com dados
             } catch (error) {
                 console.error('Erro ao buscar dados:', error);
                 document.getElementById('loading').textContent = 'Erro ao carregar dados. Por favor, tente novamente.';
@@ -56,72 +61,86 @@
             }
         }
 
-        // Função para criar o gráfico
         function createChart(data) {
             const ctx = document.getElementById('myChart').getContext('2d');
             
             // Preparar dados para o gráfico
-            const labels = data.map(row => row[0]); // Nomes da coluna B
-            const dataB = data.map(row => row[0] || 0); // Valores da coluna B
-            const dataD = data.map(row => row[2] || 0); // Valores da coluna D
+            const produtores = data.map(row => row[0]); // Nomes dos produtores da coluna B
+            const quantidades = data.map(row => row[2]); // Quantidades da coluna D
 
             new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: labels,
+                    labels: produtores,
                     datasets: [{
-                        label: 'Coluna B',
-                        data: dataB,
-                        backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                        borderColor: 'rgba(54, 162, 235, 1)',
-                        borderWidth: 1
-                    }, {
-                        label: 'Coluna D',
-                        data: dataD,
-                        backgroundColor: 'rgba(255, 99, 132, 0.6)',
-                        borderColor: 'rgba(255, 99, 132, 1)',
-                        borderWidth: 1
+                        label: 'Quantidade',
+                        data: quantidades,
+                        backgroundColor: 'rgba(52, 152, 219, 0.7)',
+                        borderColor: 'rgba(52, 152, 219, 1)',
+                        borderWidth: 1,
+                        borderRadius: 5,
+                        maxBarThickness: 50
                     }]
                 },
                 options: {
                     responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y', // Barras horizontais
                     scales: {
                         x: {
-                            ticks: {
-                                autoSkip: false,
-                                maxRotation: 90,
-                                minRotation: 90
+                            beginAtZero: true,
+                            grid: {
+                                display: false
+                            },
+                            title: {
+                                display: true,
+                                text: 'Quantidade',
+                                font: {
+                                    size: 14
+                                }
                             }
                         },
                         y: {
-                            beginAtZero: true
+                            grid: {
+                                display: false
+                            }
                         }
                     },
                     plugins: {
-                        title: {
-                            display: true,
-                            text: 'Comparação entre Colunas B e D'
-                        },
                         legend: {
-                            position: 'bottom'
+                            display: false // Remove a legenda pois só temos uma série
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `Quantidade: ${context.parsed.x}`;
+                                }
+                            }
+                        }
+                    },
+                    layout: {
+                        padding: {
+                            left: 10,
+                            right: 25,
+                            top: 0,
+                            bottom: 0
                         }
                     }
                 }
             });
         }
 
-        // Inicializar o dashboard
         async function initDashboard() {
             try {
                 const data = await fetchData();
                 document.getElementById('loading').style.display = 'none';
+                document.getElementById('myChart').style.height = `${Math.max(400, data.length * 40)}px`;
                 createChart(data);
             } catch (error) {
                 console.error('Erro ao inicializar dashboard:', error);
             }
         }
 
-        // Carregar o dashboard quando a página carregar
         window.onload = initDashboard;
     </script>
 </body>
