@@ -34,6 +34,7 @@
         .chart-container {
             padding: 20px;
             margin-top: 20px;
+            height: 600px;
         }
     </style>
 </head>
@@ -85,12 +86,12 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    indexAxis: 'y', // Barras horizontais
                     scales: {
-                        x: {
+                        y: {
                             beginAtZero: true,
                             grid: {
-                                display: false
+                                display: true,
+                                color: 'rgba(0, 0, 0, 0.1)'
                             },
                             title: {
                                 display: true,
@@ -100,9 +101,14 @@
                                 }
                             }
                         },
-                        y: {
+                        x: {
                             grid: {
                                 display: false
+                            },
+                            ticks: {
+                                autoSkip: false,
+                                maxRotation: 90,
+                                minRotation: 45
                             }
                         }
                     },
@@ -113,7 +119,7 @@
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
-                                    return `Quantidade: ${context.parsed.x}`;
+                                    return `Quantidade: ${context.parsed.y}`;
                                 }
                             }
                         }
@@ -134,7 +140,6 @@
             try {
                 const data = await fetchData();
                 document.getElementById('loading').style.display = 'none';
-                document.getElementById('myChart').style.height = `${Math.max(400, data.length * 40)}px`;
                 createChart(data);
             } catch (error) {
                 console.error('Erro ao inicializar dashboard:', error);
