@@ -61,9 +61,9 @@
             const ctx = document.getElementById('myChart').getContext('2d');
             
             // Preparar dados para o gráfico
-            const labels = data.map((row, index) => `Linha ${index + 1}`);
-            const dataB = data.map(row => row[0] || 0);
-            const dataD = data.map(row => row[2] || 0);
+            const labels = data.map(row => row[0]); // Nomes da coluna B
+            const dataB = data.map(row => row[0] || 0); // Valores da coluna B
+            const dataD = data.map(row => row[2] || 0); // Valores da coluna D
 
             new Chart(ctx, {
                 type: 'bar',
@@ -86,6 +86,13 @@
                 options: {
                     responsive: true,
                     scales: {
+                        x: {
+                            ticks: {
+                                autoSkip: false,
+                                maxRotation: 90,
+                                minRotation: 90
+                            }
+                        },
                         y: {
                             beginAtZero: true
                         }
@@ -119,3 +126,4 @@
     </script>
 </body>
 </html>
+
