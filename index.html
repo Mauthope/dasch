@@ -54,7 +54,8 @@
             try {
                 const response = await fetch(SCRIPT_URL);
                 const data = await response.json();
-                return data.filter(row => row[0] && row[2]); // Filtra apenas linhas com dados
+                // Remove a primeira linha (cabeçalho) e filtra linhas vazias
+                return data.slice(1).filter(row => row[0] && row[2]);
             } catch (error) {
                 console.error('Erro ao buscar dados:', error);
                 document.getElementById('loading').textContent = 'Erro ao carregar dados. Por favor, tente novamente.';
@@ -67,7 +68,7 @@
             
             // Preparar dados para o gráfico
             const produtores = data.map(row => row[0]); // Nomes dos produtores da coluna B
-            const quantidades = data.map(row => row[2]); // Quantidades da coluna D
+            const quantidades = data.map(row => parseFloat(row[2]) || 0); // Quantidades da coluna D, convertidas para número
 
             new Chart(ctx, {
                 type: 'bar',
@@ -106,9 +107,10 @@
                                 display: false
                             },
                             ticks: {
-                                autoSkip: false,
+                                autoSkip: true,
                                 maxRotation: 90,
-                                minRotation: 45
+                                minRotation: 45,
+                                maxTicksLimit: 20 // Limita o número de ticks no eixo X
                             }
                         }
                     },
